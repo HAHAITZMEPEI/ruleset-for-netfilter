@@ -1,2 +1,19 @@
-# Create-a-firewall-ruleset-for-netfilter
-As a system engineer your expertise is asked to create a firewall ruleset for a hosting server.  The server is provided with the following services: Apache, ProFTPd and bind9. Please, do not allow zonetransfers. Also protect the server against ping flooding. The server is not allowed to make outgoing connections, except for the installation of security updates.
+Block incoming Ping
+iptables -A INPUT -p icmp --icmp-type echo-request -j REJECT
+
+Allow updates [HTTP/HTTPS] / Apache 
+iptables -A OUTPUT -p tcp --dport 80 -m state --state NEW,ESTABLISHED -j ACCEPT
+iptables -A INPUT -p tcp --sport 80 -m state --state ESTABLISHED -j ACCEPT
+iptables -A INPUT -m state --state NEW -p tcp --dport 443 -j ACCEPT
+
+Block outgoing connections 
+iptables -A OUTPUT -o eth1 -j DROP
+
+Bind9
+iptables -A OUTPUT -d DNSServer -p udp -dport 53 -j ACCEPT
+iptables -A INPUT -s DNSServer -p udp -sport 53 -j ACCEPT
+
+ProFTPd
+iptables -A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+iptables -I INPUT 2 -p tcp --match multiport --dports 49152:65535 -j ACCEPT
+
